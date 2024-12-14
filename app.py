@@ -7,7 +7,6 @@ import math
 import cvzone
 from PIL import Image
 import time
-import asyncio
 
 # Page configuration
 st.set_page_config(
@@ -150,7 +149,6 @@ with tab1:
         sendback_audio=False,
         async_processing=True,  # Enable async processing
     )
-
 
 # Image upload tab
 with tab2:
