@@ -125,10 +125,13 @@ with tab1:
 
             return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-    # WebRTC Configuration
-    RTC_CONFIGURATION = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-    )
+   # RTC Configuration with STUN server
+    RTC_CONFIGURATION = RTCConfiguration({
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {"urls": ["stun:stun1.l.google.com:19302"]}
+        ]
+    })
 
     # Camera selection with 720p settings
     webrtc_ctx = webrtc_streamer(
