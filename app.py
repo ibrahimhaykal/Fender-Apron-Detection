@@ -7,51 +7,58 @@ import math
 import cvzone
 from PIL import Image
 import time
-import asyncio
-import threading
-import sys
 
-# ---- FIX ASYNCIO EVENT LOOP ----
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-else:
-    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
-
-def fix_asyncio_event_loop():
-    asyncio.set_event_loop(asyncio.new_event_loop())
-
-threading.Thread(target=fix_asyncio_event_loop).start()
-
-# ---- PAGE CONFIGURATION ----
+# Page configuration
 st.set_page_config(
     page_title="Fender Apron Detection",
     page_icon="🔍",
     layout="wide"
 )
 
-# ---- CUSTOM CSS ----
+# Custom CSS
 st.markdown(
     """
     <style>
-    .stApp { max-width: 1200px; margin: 0 auto; }
-    .main { padding: 2rem; }
+    .stApp {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .main {
+        padding: 2rem;
+    }
+    .css-1d391kg {
+        padding: 2rem 1rem;
+    }
     .stButton>button {
-        width: 100%; border-radius: 10px; height: 3rem;
-        background-color: #FF4B4B; color: white; font-weight: bold;
+        width: 100%;
+        border-radius: 10px;
+        height: 3rem;
+        background-color: #FF4B4B;
+        color: white;
+        font-weight: bold;
     }
     .uploadedFile {
-        border: 2px dashed #ccc; padding: 2rem; border-radius: 10px;
+        border: 2px dashed #ccc;
+        padding: 2rem;
+        border-radius: 10px;
     }
     .footer {
-        position: fixed; bottom: 0; left: 0; width: 100%;
-        background-color: #f0f2f6; padding: 1rem; text-align: center;
-        font-size: 0.8rem; color: #666;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #f0f2f6;
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: #666;
     }
     </style>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True
 )
 
-# ---- LOAD YOLO MODEL ----
+# Load YOLO model
 @st.cache_resource
 def load_model():
     return YOLO("runs/train/fender_apron_model/weights/best.pt")
@@ -59,27 +66,30 @@ def load_model():
 model = load_model()
 classNames = ['Crack', 'Good', 'Rust']
 
-# ---- IMAGE RESIZING FUNCTION ----
 def resize_image(image, target_size=(640, 640)):
-    """Resize image maintaining aspect ratio and pad if necessary."""
+    """Resize image maintaining aspect ratio and pad if necessary"""
     original_size = image.size
     ratio = float(target_size[0]) / max(original_size)
     new_size = tuple([int(x * ratio) for x in original_size])
 
     image = image.resize(new_size, Image.Resampling.LANCZOS)
     new_image = Image.new('RGB', target_size, (128, 128, 128))
-    offset = ((target_size[0] - new_size[0]) // 2, (target_size[1] - new_size[1]) // 2)
+    offset = (
+        (target_size[0] - new_size[0]) // 2,
+        (target_size[1] - new_size[1]) // 2
+    )
     new_image.paste(image, offset)
+
     return new_image, offset
 
-# ---- TITLE ----
+# Title
 st.title("🔍 Fender Apron Detection System")
 st.markdown("### Detect cracks, rust, and condition of fender aprons in real-time")
 
-# ---- CREATE TABS ----
+# Create tabs
 tab1, tab2 = st.tabs(["📷 Camera Detection", "🖼️ Image Upload"])
 
-# ---- CAMERA TAB ----
+# Camera tab
 with tab1:
     st.markdown("### Real-time Detection")
 
@@ -115,25 +125,31 @@ with tab1:
 
             return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-    # ---- RTC CONFIGURATION ----
-    RTC_CONFIGURATION = RTCConfiguration({
-        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-    })
+    # WebRTC Configuration
+    RTC_CONFIGURATION = RTCConfiguration(
+        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    )
 
-    # ---- STREAMLIT WEBRTC ----
+    # Camera selection with 720p settings
     webrtc_ctx = webrtc_streamer(
         key="example",
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=RTC_CONFIGURATION,
         video_processor_factory=VideoProcessor,
-        media_stream_constraints={"video": {"width": 1280, "height": 720}, "audio": False},
+        media_stream_constraints={
+            "video": {
+                "width": {"ideal": 1280},
+                "height": {"ideal": 720}
+            },
+            "audio": False
+        },
         async_processing=True,
     )
 
-# ---- IMAGE UPLOAD TAB ----
+# Image upload tab
 with tab2:
     st.markdown("### Upload Image")
-    st.info("Images will be resized to 640x640 pixels for optimal detection.")
+    st.info("Images will be resized to 640x640 pixels for optimal detection")
 
     uploaded_file = st.file_uploader("Choose an image...", type=['jpg', 'jpeg', 'png'])
 
@@ -170,10 +186,14 @@ with tab2:
         processing_time = (time.time() - start_time) * 1000
 
         st.image(img_array, caption='Processed Image (640x640)', use_column_width=True)
+
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total Detections", f"{num_detections}")
-        col2.metric("Processing Time", f"{processing_time:.1f} ms")
-        col3.metric("Max Confidence", f"{max_conf * 100:.1f}%")
+        with col1:
+            st.metric("Total Detections", f"{num_detections}")
+        with col2:
+            st.metric("Processing Time", f"{processing_time:.1f} ms")
+        with col3:
+            st.metric("Max Confidence", f"{max_conf * 100:.1f}%")
 
 # Footer with system information and creator
 st.markdown("---")
