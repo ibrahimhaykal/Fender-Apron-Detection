@@ -7,6 +7,10 @@ import math
 import cvzone
 from PIL import Image
 import time
+import asyncio
+
+# --- Fix asyncio event loop ---
+asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 # Page configuration
 st.set_page_config(
@@ -99,61 +103,56 @@ with tab1:
             self.classNames = classNames
 
         def recv(self, frame):
-            try:
-                img = frame.to_ndarray(format="bgr24")
-                height, width = img.shape[:2]
-                target_height, target_width = 720, 1280
+            img = frame.to_ndarray(format="bgr24")
+            height, width = img.shape[:2]
+            target_height, target_width = 720, 1280
 
-                pil_img = Image.fromarray(img)
-                resized_img = pil_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
-                img_array = np.array(resized_img)
+            pil_img = Image.fromarray(img)
+            resized_img = pil_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+            img_array = np.array(resized_img)
 
-                results = self.model(img_array, stream=True)
-                for r in results:
-                    boxes = r.boxes
-                    for box in boxes:
-                        x1, y1, x2, y2 = box.xyxy[0]
-                        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                        w, h = x2 - x1, y2 - y1
+            results = self.model(img_array, stream=True)
+            for r in results:
+                boxes = r.boxes
+                for box in boxes:
+                    x1, y1, x2, y2 = box.xyxy[0]
+                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                    w, h = x2 - x1, y2 - y1
 
-                        cvzone.cornerRect(img_array, (x1, y1, w, h))
-                        conf = math.ceil((box.conf[0] * 100)) / 100
-                        cls = int(box.cls[0])
-                        cvzone.putTextRect(
-                            img_array, f'{self.classNames[cls]} {conf}',
-                            (max(0, x1), max(35, y1)), scale=1, thickness=1
-                        )
+                    cvzone.cornerRect(img_array, (x1, y1, w, h))
+                    conf = math.ceil((box.conf[0] * 100)) / 100
+                    cls = int(box.cls[0])
+                    cvzone.putTextRect(
+                        img_array, f'{self.classNames[cls]} {conf}',
+                        (max(0, x1), max(35, y1)), scale=1, thickness=1
+                    )
 
-                return av.VideoFrame.from_ndarray(img_array, format="bgr24")
-            except Exception as e:
-                st.error(f"Error processing video frame: {e}")
-                return av.VideoFrame.from_ndarray(np.zeros((720, 1280, 3), dtype=np.uint8), format="bgr24")
+            return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-    # RTC Configuration with a stable STUN server
+    # --- Fix asyncio event loop before WebRTC initialization ---
+    if not asyncio.get_event_loop().is_running():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+    # RTC Configuration with STUN server only
     RTC_CONFIGURATION = RTCConfiguration({
-        "iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]}  # Reliable STUN server
-        ]
+        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
     })
-    
-    # Streamlit WebRTC handler
-    try:
-        webrtc_ctx = webrtc_streamer(
-            key="realtime_detection",
-            mode=WebRtcMode.SENDRECV,
-            rtc_configuration=RTC_CONFIGURATION,
-            video_processor_factory=VideoProcessor,
-            media_stream_constraints={
-                "video": {
-                    "width": {"ideal": 1280},
-                    "height": {"ideal": 720}
-                },
-                "audio": False
+
+    # Camera selection with 720p settings
+    webrtc_ctx = webrtc_streamer(
+        key="example",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=RTC_CONFIGURATION,
+        video_processor_factory=VideoProcessor,
+        media_stream_constraints={
+            "video": {
+                "width": {"ideal": 1280},
+                "height": {"ideal": 720}
             },
-            async_processing=True,  # Ensure async processing
-        )
-    except Exception as e:
-        st.error(f"WebRTC initialization error: {e}")
+            "audio": False
+        },
+        async_processing=False,  # Disable async for better compatibility
+    )
 
 # Image upload tab
 with tab2:
