@@ -81,7 +81,7 @@ fender-apron-Defect-Detection-1
 - Deploy the system as a web app for remote accessibility.
 
 ## Authors
-- Ibrahim Haykal
+- Ibrahim Haykal Alatas
 - Fatur Rahman Zaki
 
 **Built with passion for the Intelligent Systems course ✨**
