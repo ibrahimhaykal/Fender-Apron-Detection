@@ -129,7 +129,7 @@ with tab1:
     RTC_CONFIGURATION = RTCConfiguration(
         {"iceServers": [
             {"urls": ["stun:stun.l.google.com:19302"]},
-            {"urls": "turn:openrelay.metered.ca:80", "username": "openrelayproject", "credential": "openrelayproject"}
+            {"urls": "turn:global.turn.twilio.com:3478?transport=udp", "username": "c0161b290261c1dfc727263c812ad03a5841da46cdb3cb2f9a5557262e5e185", "credential": "I972TUrWaD9xSFTzr9mGDDZArMoz4KMyVZxW0Nul/lI="}
         ]}
     )
 
