@@ -78,8 +78,7 @@ fender-apron-Defect-Detection-1
 
 ## Future Improvements
 - Integrate additional defect categories.
-- Enhance training with a larger dataset.
-- Deploy the system as a web app for remote accessibility.
+- Enhance training with a larger dataset and more variative.
 
 ## Authors
 - Ibrahim Haykal Alatas
