@@ -9,8 +9,11 @@ from PIL import Image
 import time
 import asyncio
 
-# --- Fix asyncio event loop ---
-asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+# Fix asyncio event loop for Python 3.12
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
 # Page configuration
 st.set_page_config(
@@ -19,7 +22,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS
+# Custom CSS for UI
 st.markdown(
     """
     <style>
@@ -30,9 +33,6 @@ st.markdown(
     .main {
         padding: 2rem;
     }
-    .css-1d391kg {
-        padding: 2rem 1rem;
-    }
     .stButton>button {
         width: 100%;
         border-radius: 10px;
@@ -40,11 +40,6 @@ st.markdown(
         background-color: #FF4B4B;
         color: white;
         font-weight: bold;
-    }
-    .uploadedFile {
-        border: 2px dashed #ccc;
-        padding: 2rem;
-        border-radius: 10px;
     }
     .footer {
         position: fixed;
@@ -83,7 +78,6 @@ def resize_image(image, target_size=(640, 640)):
         (target_size[1] - new_size[1]) // 2
     )
     new_image.paste(image, offset)
-
     return new_image, offset
 
 # Title
@@ -129,18 +123,14 @@ with tab1:
 
             return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-    # --- Fix asyncio event loop before WebRTC initialization ---
-    if not asyncio.get_event_loop().is_running():
-        asyncio.set_event_loop(asyncio.new_event_loop())
-
-    # RTC Configuration with STUN server only
+    # RTC Configuration with STUN servers
     RTC_CONFIGURATION = RTCConfiguration({
         "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
     })
 
-    # Camera selection with 720p settings
+    # Real-time video streaming
     webrtc_ctx = webrtc_streamer(
-        key="example",
+        key="fender-apron-detection",
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=RTC_CONFIGURATION,
         video_processor_factory=VideoProcessor,
@@ -151,7 +141,7 @@ with tab1:
             },
             "audio": False
         },
-        async_processing=False,  # Disable async for better compatibility
+        async_processing=False
     )
 
 # Image upload tab
