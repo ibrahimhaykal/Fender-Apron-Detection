@@ -149,9 +149,10 @@ with tab1:
             },
             "audio": False
         },
-        async_processing=True,
         sendback_audio=False,
+        async_processing=False,  # Disable async processing temporarily
     )
+
 
 # Image upload tab
 with tab2:
