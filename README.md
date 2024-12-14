@@ -4,6 +4,7 @@
 🚗 **Real-Time Fender Apron Defect Detection System**
 
 This repository contains a system for detecting and classifying fender apron defects, such as cracks, rust, and good conditions. Designed for automotive applications, the system is built using YOLOv8 object detection and Streamlit for interactive visualization.
+Live Demo available on : https://fender-apron-detection-systems.streamlit.app/
 
 ## Folder Structure
 
