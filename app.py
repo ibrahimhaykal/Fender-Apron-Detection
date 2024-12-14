@@ -125,14 +125,16 @@ with tab1:
 
             return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-   # RTC Configuration with STUN server
+    # RTC Configuration with STUN and TURN servers
     RTC_CONFIGURATION = RTCConfiguration({
         "iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]},
-            {"urls": ["stun:stun1.l.google.com:19302"]}
+            {"urls": ["stun:stun.l.google.com:19302"]},  # STUN server
+            {"urls": ["turn:turn.anyfirewall.com:443?transport=udp"],  # TURN server
+             "username": "webrtc",
+             "credential": "webrtc"}
         ]
     })
-
+    
     # Camera selection with 720p settings
     webrtc_ctx = webrtc_streamer(
         key="example",
@@ -146,8 +148,9 @@ with tab1:
             },
             "audio": False
         },
-        async_processing=True,
+        async_processing=False,  # Disable async for better compatibility
     )
+
 
 # Image upload tab
 with tab2:
