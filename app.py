@@ -7,6 +7,7 @@ import math
 import cvzone
 from PIL import Image
 import time
+import asyncio
 
 # Page configuration
 st.set_page_config(
@@ -125,12 +126,16 @@ with tab1:
 
             return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-    # WebRTC Configuration
+    # WebRTC Configuration with Multiple STUN Servers
     RTC_CONFIGURATION = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+        {"iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {"urls": ["stun:stun.stunprotocol.org:3478"]},
+            {"urls": ["stun:stun.sipnet.ru:3478"]}
+        ]}
     )
 
-    # Camera selection with 720p settings
+    # Camera selection with improved resolution handling
     webrtc_ctx = webrtc_streamer(
         key="example",
         mode=WebRtcMode.SENDRECV,
@@ -138,12 +143,14 @@ with tab1:
         video_processor_factory=VideoProcessor,
         media_stream_constraints={
             "video": {
-                "width": {"ideal": 1280},
-                "height": {"ideal": 720}
+                "width": {"min": 640, "ideal": 1280, "max": 1920},
+                "height": {"min": 480, "ideal": 720, "max": 1080},
+                "aspectRatio": {"ideal": 1.7777}  # 16:9 ratio
             },
             "audio": False
         },
         async_processing=True,
+        sendback_audio=False,
     )
 
 # Image upload tab
@@ -223,8 +230,6 @@ with col2:
         Efficient, accurate, and optimized for industrial applications.  
         """  
     )  
- 
-
 
 st.markdown(
     """
