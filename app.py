@@ -126,12 +126,10 @@ with tab1:
 
             return av.VideoFrame.from_ndarray(img_array, format="bgr24")
 
-    # WebRTC Configuration with Multiple STUN Servers
+    # WebRTC Configuration with a single STUN server (Google)
     RTC_CONFIGURATION = RTCConfiguration(
         {"iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]},
-            {"urls": ["stun:stun.stunprotocol.org:3478"]},
-            {"urls": ["stun:stun.sipnet.ru:3478"]}
+            {"urls": ["stun:stun.l.google.com:19302"]}
         ]}
     )
 
@@ -150,7 +148,7 @@ with tab1:
             "audio": False
         },
         sendback_audio=False,
-        async_processing=False,  # Disable async processing temporarily
+        async_processing=True,  # Enable async processing
     )
 
 
