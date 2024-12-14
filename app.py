@@ -61,7 +61,7 @@ st.markdown(
 # Load YOLO model
 @st.cache_resource
 def load_model():
-    return YOLO("../FenderApronProject/runs/train/fender_apron_model/weights/best.pt")
+    return YOLO("../runs/train/fender_apron_model/weights/best.pt")
 
 model = load_model()
 classNames = ['Crack', 'Good', 'Rust']
