@@ -1,0 +1,14 @@
+names:
+- Defect
+- Healthy
+- rust
+nc: 3
+roboflow:
+  license: CC BY 4.0
+  project: fender-apron-defect-detection
+  url: https://universe.roboflow.com/fender-apron-defect-detection/fender-apron-defect-detection/dataset/1
+  version: 1
+  workspace: fender-apron-defect-detection
+test: ../test/images
+train: ../train/images
+val: ../valid/images

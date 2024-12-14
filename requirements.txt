@@ -1,0 +1,14 @@
+
+streamlit
+streamlit-webrtc
+opencv-python-headless
+numpy
+Pillow
+cvzone
+av
+ultralytics
+roboflow
+torch
+torchvision
+pandas
+scipy
