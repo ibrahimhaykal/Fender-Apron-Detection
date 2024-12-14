@@ -135,7 +135,7 @@ with tab1:
     # Camera selection with improved resolution handling
     webrtc_ctx = webrtc_streamer(
         key="example",
-        mode=WebRtcMode.RECVONLY,
+        mode=WebRtcMode.SENDRECV,
         rtc_configuration=RTC_CONFIGURATION,
         video_processor_factory=VideoProcessor,
         media_stream_constraints={
