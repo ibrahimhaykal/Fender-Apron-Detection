@@ -39,7 +39,7 @@ fender-apron-Defect-Detection-1
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/FenderApronDetection.git
+   git clone https://github.com/ibrahimhaykal/Fender-Apron-Detection.git
    cd FenderApronDetection/fender-apron-Defect-Detection-1
    ```
 
