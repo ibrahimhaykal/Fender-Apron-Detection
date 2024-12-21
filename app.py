@@ -189,8 +189,8 @@ with tab2:
 
         processing_time = (time.time() - start_time) * 1000
 
-        st.image(img_array, caption='Processed Image (640x640)', use_column_width=True)
-
+        st.image(img_array, caption='Processed Image (640x640)', use_container_width=True)
+        
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Detections", f"{num_detections}")
