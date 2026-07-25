@@ -88,9 +88,9 @@ with tab1:
 
     # Inference tuning for CPU-only deployment (e.g. Streamlit Cloud).
     # Smaller imgsz + frame skipping keeps the stream responsive.
-    INFER_IMGSZ = 320
+    INFER_IMGSZ = 256
     INFER_CONF = 0.4
-    PROCESS_EVERY_N = 2  # run detection on 1 of every N frames
+    PROCESS_EVERY_N = 3  # run detection on 1 of every N frames
 
     class VideoProcessor:
         def __init__(self):
@@ -159,9 +159,9 @@ with tab1:
             video_processor_factory=VideoProcessor,
             media_stream_constraints={
                 "video": {
-                    "width": {"min": 320, "ideal": 640, "max": 1280},
-                    "height": {"min": 240, "ideal": 480, "max": 720},
-                    "frameRate": {"ideal": 15, "max": 20},
+                    "width": {"min": 320, "ideal": 480, "max": 1280},
+                    "height": {"min": 240, "ideal": 360, "max": 720},
+                    "frameRate": {"ideal": 10, "max": 15},
                     "aspectRatio": {"ideal": 1.7777},
                 },
                 "audio": False,
