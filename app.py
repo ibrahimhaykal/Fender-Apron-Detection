@@ -1,5 +1,6 @@
 from pathlib import Path
 import math
+import threading
 import time
 
 import av
@@ -87,31 +88,42 @@ with tab1:
     st.info("Camera access requires browser permission and a secure context. If the camera does not start, use the Image Upload tab instead.")
 
     # Inference tuning for CPU-only deployment (e.g. Streamlit Cloud).
-    # Smaller imgsz + frame skipping keeps the stream responsive.
     INFER_IMGSZ = 256
     INFER_CONF = 0.4
-    PROCESS_EVERY_N = 3  # run detection on 1 of every N frames
 
     class VideoProcessor:
+        """Decouple display from detection.
+
+        recv() returns every camera frame immediately (so the video stays at
+        full framerate) while a background thread runs YOLO on the most recent
+        frame only. Boxes are cached and drawn on every frame, updating as fast
+        as the CPU can infer without ever stalling the video.
+        """
+
         def __init__(self):
             self.model = model
             self.classNames = classNames
-            self.frame_count = 0
-            self.last_boxes = []  # cache detections to draw on skipped frames
+            self._lock = threading.Lock()
+            self._latest = None      # newest frame waiting to be inferred
+            self._boxes = []         # last detection result, drawn on all frames
+            self._running = True
+            self._thread = threading.Thread(target=self._infer_loop, daemon=True)
+            self._thread.start()
 
-        def recv(self, frame):
-            try:
-                img = frame.to_ndarray(format="bgr24")
-                self.frame_count += 1
-
-                # Only run the model on every Nth frame; reuse last result otherwise.
-                if self.frame_count % PROCESS_EVERY_N == 0:
+        def _infer_loop(self):
+            while self._running:
+                with self._lock:
+                    frame = self._latest
+                    self._latest = None
+                if frame is None:
+                    time.sleep(0.005)
+                    continue
+                try:
                     results = self.model(
-                        img,
+                        frame,
                         imgsz=INFER_IMGSZ,
                         conf=INFER_CONF,
                         verbose=False,
-                        stream=True,
                     )
                     boxes_out = []
                     for r in results:
@@ -121,9 +133,22 @@ with tab1:
                             conf = math.ceil((box.conf[0] * 100)) / 100
                             cls = int(box.cls[0])
                             boxes_out.append((x1, y1, x2, y2, conf, cls))
-                    self.last_boxes = boxes_out
+                    with self._lock:
+                        self._boxes = boxes_out
+                except Exception:
+                    pass
 
-                for x1, y1, x2, y2, conf, cls in self.last_boxes:
+        def recv(self, frame):
+            try:
+                img = frame.to_ndarray(format="bgr24")
+
+                # Hand the newest frame to the worker (overwrites any unprocessed
+                # one) and grab the latest boxes — both non-blocking.
+                with self._lock:
+                    self._latest = img.copy()  # clean frame for the worker
+                    boxes = self._boxes
+
+                for x1, y1, x2, y2, conf, cls in boxes:
                     w, h = x2 - x1, y2 - y1
                     cvzone.cornerRect(img, (x1, y1, w, h))
                     cvzone.putTextRect(
@@ -138,6 +163,9 @@ with tab1:
             except Exception as exc:
                 st.caption(f"Frame processing error: {exc}")
                 return frame
+
+        def on_ended(self):
+            self._running = False
 
     rtc_configuration = RTCConfiguration(
         {
@@ -159,9 +187,9 @@ with tab1:
             video_processor_factory=VideoProcessor,
             media_stream_constraints={
                 "video": {
-                    "width": {"min": 320, "ideal": 480, "max": 1280},
-                    "height": {"min": 240, "ideal": 360, "max": 720},
-                    "frameRate": {"ideal": 10, "max": 15},
+                    "width": {"min": 320, "ideal": 640, "max": 1280},
+                    "height": {"min": 240, "ideal": 480, "max": 720},
+                    "frameRate": {"ideal": 30, "max": 30},
                     "aspectRatio": {"ideal": 1.7777},
                 },
                 "audio": False,
