@@ -1,13 +1,13 @@
-aioice 
+aioice
 aiortc
 streamlit
 streamlit-webrtc
-opencv-python-headless
-numpy
+opencv-python-headless==4.10.0
+numpy<2
 Pillow
 cvzone
 av
-ultralytics
+ultralytics>=8.3.0
 roboflow
 torch
 torchvision
