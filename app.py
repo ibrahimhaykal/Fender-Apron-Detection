@@ -86,40 +86,55 @@ with tab1:
     st.markdown("### Real-time Detection")
     st.info("Camera access requires browser permission and a secure context. If the camera does not start, use the Image Upload tab instead.")
 
+    # Inference tuning for CPU-only deployment (e.g. Streamlit Cloud).
+    # Smaller imgsz + frame skipping keeps the stream responsive.
+    INFER_IMGSZ = 320
+    INFER_CONF = 0.4
+    PROCESS_EVERY_N = 2  # run detection on 1 of every N frames
+
     class VideoProcessor:
         def __init__(self):
             self.model = model
             self.classNames = classNames
+            self.frame_count = 0
+            self.last_boxes = []  # cache detections to draw on skipped frames
 
         def recv(self, frame):
             try:
                 img = frame.to_ndarray(format="bgr24")
-                target_height, target_width = 720, 1280
+                self.frame_count += 1
 
-                pil_img = Image.fromarray(img)
-                resized_img = pil_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
-                img_array = np.array(resized_img)
+                # Only run the model on every Nth frame; reuse last result otherwise.
+                if self.frame_count % PROCESS_EVERY_N == 0:
+                    results = self.model(
+                        img,
+                        imgsz=INFER_IMGSZ,
+                        conf=INFER_CONF,
+                        verbose=False,
+                        stream=True,
+                    )
+                    boxes_out = []
+                    for r in results:
+                        for box in r.boxes:
+                            x1, y1, x2, y2 = box.xyxy[0]
+                            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                            conf = math.ceil((box.conf[0] * 100)) / 100
+                            cls = int(box.cls[0])
+                            boxes_out.append((x1, y1, x2, y2, conf, cls))
+                    self.last_boxes = boxes_out
 
-                results = self.model(img_array, stream=True)
-                for r in results:
-                    boxes = r.boxes
-                    for box in boxes:
-                        x1, y1, x2, y2 = box.xyxy[0]
-                        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                        w, h = x2 - x1, y2 - y1
+                for x1, y1, x2, y2, conf, cls in self.last_boxes:
+                    w, h = x2 - x1, y2 - y1
+                    cvzone.cornerRect(img, (x1, y1, w, h))
+                    cvzone.putTextRect(
+                        img,
+                        f"{self.classNames[cls]} {conf}",
+                        (max(0, x1), max(35, y1)),
+                        scale=1,
+                        thickness=1,
+                    )
 
-                        cvzone.cornerRect(img_array, (x1, y1, w, h))
-                        conf = math.ceil((box.conf[0] * 100)) / 100
-                        cls = int(box.cls[0])
-                        cvzone.putTextRect(
-                            img_array,
-                            f"{self.classNames[cls]} {conf}",
-                            (max(0, x1), max(35, y1)),
-                            scale=1,
-                            thickness=1,
-                        )
-
-                return av.VideoFrame.from_ndarray(img_array, format="bgr24")
+                return av.VideoFrame.from_ndarray(img, format="bgr24")
             except Exception as exc:
                 st.caption(f"Frame processing error: {exc}")
                 return frame
@@ -144,8 +159,9 @@ with tab1:
             video_processor_factory=VideoProcessor,
             media_stream_constraints={
                 "video": {
-                    "width": {"min": 640, "ideal": 1280, "max": 1920},
-                    "height": {"min": 480, "ideal": 720, "max": 1080},
+                    "width": {"min": 320, "ideal": 640, "max": 1280},
+                    "height": {"min": 240, "ideal": 480, "max": 720},
+                    "frameRate": {"ideal": 15, "max": 20},
                     "aspectRatio": {"ideal": 1.7777},
                 },
                 "audio": False,
